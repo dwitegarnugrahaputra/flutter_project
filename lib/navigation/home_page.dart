@@ -1,9 +1,24 @@
-
+import 'package:finaal_project/service/user.dart';
+import 'package:finaal_project/service/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late Future<List<Users>> futureUsers;
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    futureUsers = _userService.fetchUser();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,8 +76,7 @@ class HomePage extends StatelessWidget {
               top: 135,
               left: 24,
               right: 24,
-              child:
-              Row(
+              child: Row(
                 children: [
                   Expanded(
                     child: TextField(
@@ -113,8 +127,7 @@ class HomePage extends StatelessWidget {
                     ),
                   )
                 ],
-              )
-          ),
+              )),
           Positioned(
             top: 203,
             left: 23,
@@ -124,7 +137,7 @@ class HomePage extends StatelessWidget {
               height: 140,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/home/Frame 90.png'),
+                  image: AssetImage('assets/Frame 90.png'),
                   fit: BoxFit.cover,
                 ),
                 borderRadius: BorderRadius.circular(15),
@@ -141,54 +154,110 @@ class HomePage extends StatelessWidget {
                   style: GoogleFonts.dmSans(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF000000)
-                  ),
+                      color: Color(0xFF000000)),
                 )
               ],
             ),
           ),
           Positioned(
-            top: 413,
+            top: 380  ,
             left: 24,
             right: 24,
-            child:
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center ,
-              children: [
-                Container(
-                  width: 156,
-                  height: 238,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.25),
-                            blurRadius: 12,
-                            spreadRadius: 0,
-                            offset: Offset(0, 0)
-                        )
-                      ]
+            child: FutureBuilder<List<Users>>(
+              future: futureUsers,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text('User Not Found');
+                }
+                final users = snapshot.data!.take(2).toList();
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 156 / 238,
                   ),
-                ),
-                SizedBox(width: 15,),
-                Container(
-                  width: 156,
-                  height: 238,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.25),
-                            blurRadius: 12,
-                            spreadRadius: 0,
-                            offset: Offset(0, 0)
-                        )
-                      ]
-                  ),
-                )
-              ],
+                  shrinkWrap: true,
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Avatar
+                            Container(
+                              width: double.infinity,
+                              height: 128,
+                              decoration: BoxDecoration(
+                                color: Color(0xFFC4C4C4),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  user.avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.error, size: 40, color: Colors.red);
+                                  },
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            // Name
+                            Text(
+                              '${user.firstName} ${user.lastName}',
+                              style: GoogleFonts.sora(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            // Email
+                            Text(
+                              user.email,
+                              style: GoogleFonts.sora(
+                                fontWeight: FontWeight.w400,
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            // Price
+                            Text(
+                              'Rp 4.53',
+                              style: GoogleFonts.sora(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           )
         ],
